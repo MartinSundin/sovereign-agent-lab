@@ -49,6 +49,10 @@ import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 # Import tools from the shared tool layer
 # This import path is why the project structure matters —
@@ -119,16 +123,23 @@ def run_research_agent(task: str, max_turns: int = 8) -> dict:
     final_answer    = ""
 
     for m in result["messages"]:
+        print("-"*15)
+        print(m)
         role    = getattr(m, "type", "unknown")
         content = m.content
 
-        # Tool-call messages have structured list content
-        if isinstance(content, list):
+        # Tool-call messages have structured list content (or might be a string)
+        if isinstance(content, list) or (isinstance(content, str) and content.startswith('[') and content.endswith(']')):
+            if isinstance(content, str):
+                content = json.loads(content)
+                content = [json.loads(block) for block in content]
+
+            print(content)
             for block in content:
-                if isinstance(block, dict) and block.get("type") == "tool_use":
+                if isinstance(block, dict) and block.get("type") in ["tool_use", "function"]:
                     entry = {
                         "tool": block["name"],
-                        "args": block.get("input", {}),
+                        "args": block.get("input", block.get("parameters", {})),
                     }
                     tool_calls_made.append(entry)
                     full_trace.append({"role": "tool_call", **entry})
