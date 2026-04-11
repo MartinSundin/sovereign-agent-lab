@@ -54,7 +54,6 @@ from dotenv import load_dotenv
 # This is the import pattern you'll use in Weeks 2-5 as well.
 # The agent lives in sovereign_agent/ — the exercises just call it.
 sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from sovereign_agent.agents.research_agent import run_research_agent
 
 load_dotenv()

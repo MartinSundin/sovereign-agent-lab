@@ -123,8 +123,6 @@ def run_research_agent(task: str, max_turns: int = 8) -> dict:
     final_answer    = ""
 
     for m in result["messages"]:
-        print("-"*15)
-        print(m)
         role    = getattr(m, "type", "unknown")
         content = m.content
 
