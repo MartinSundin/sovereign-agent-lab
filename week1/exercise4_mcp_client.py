@@ -42,6 +42,8 @@ from dotenv import load_dotenv
 from langchain_core.tools import StructuredTool
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
+# from langchain_core.agents import create_agent
+
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
@@ -66,12 +68,13 @@ OUTPUTS_DIR.mkdir(exist_ok=True)
 
 def _make_mcp_caller(tool_name: str, server_script: str):
     def call(**kwargs) -> str:
+        # print(f"[TOOL] {tool_name} kwargs: {kwargs}")
         async def _inner() -> str:
             params = StdioServerParameters(command=sys.executable, args=[server_script])
             async with stdio_client(params) as (r, w):
                 async with ClientSession(r, w) as session:
                     await session.initialize()
-                    result = await session.call_tool(tool_name, kwargs)
+                    result = await session.call_tool(tool_name, kwargs["kwargs"])
                     return result.content[0].text if result.content else "{}"
         return asyncio.run(_inner())
     call.__name__ = tool_name
@@ -104,16 +107,47 @@ async def discover_tools(server_script: str) -> list:
 
 # ─── Agent queries ────────────────────────────────────────────────────────────
 
+def parse_func_inputs(inputs: dict) -> dict:
+    if "input" in inputs:
+        return inputs["input"]
+    elif "parameters" in inputs:
+        return inputs["parameters"]["kwargs"]
+    return {}
+
+def parse_json(content):
+    if isinstance(content, str):
+        if content.startswith("{") and content.endswith("}"):
+            return parse_json(json.loads(content))
+        elif content.startswith("[") and content.endswith("]"):
+            return parse_json(json.loads(content))
+        else:
+            return content
+    elif isinstance(content, list):
+        return [parse_json(c) for c in content]
+    elif isinstance(content, dict):
+        return {k: parse_json(v) for k, v in content.items()}
+    
+    return content
+
+
+
 def extract_trace(result: dict) -> list:
+    # print("extract_trace()")
+    # print(result)
     trace = []
     for m in result["messages"]:
         role    = getattr(m, "type", "unknown")
-        content = m.content
+        content = parse_json(m.content)
+        print(content)
+
         if isinstance(content, list):
             for block in content:
-                if isinstance(block, dict) and block.get("type") == "tool_use":
+                if isinstance(block, dict) and block.get("type") in ["tool_use", "function"]:
                     trace.append({"role": "tool_call", "tool": block["name"],
-                                  "args": block.get("input", {})})
+                                  "args": parse_func_inputs(block)})
+        elif isinstance(content, dict) and content.get("type") in ["tool_use", "function"]:
+            trace.append({"role": "tool_call", "tool": content["name"],
+                          "args": parse_func_inputs(content)})
         elif content:
             trace.append({"role": role, "content": str(content)})
     return trace
@@ -124,7 +158,7 @@ def print_trace(trace: list) -> None:
         if entry["role"] == "tool_call":
             args_str = json.dumps(entry.get("args", {}))[:80]
             print(f"  [TOOL_CALL] → {entry['tool']}({args_str})")
-        elif entry.get("content"):
+        if entry.get("content"):
             content = entry["content"]
             if len(content) > 400:
                 content = content[:400] + "..."
@@ -135,7 +169,7 @@ async def main() -> None:
     llm = ChatOpenAI(
         base_url="https://api.tokenfactory.nebius.com/v1/",
         api_key=os.getenv("NEBIUS_KEY"),
-        model="meta-llama/Llama-3.3-70B-Instruct",
+        model="nvidia/nemotron-3-super-120b-a12b", # "meta-llama/Llama-3.3-70B-Instruct", # 
         temperature=0,
     )
 
@@ -145,6 +179,7 @@ async def main() -> None:
     tools, tool_names = await discover_tools(SERVER_SCRIPT)
     print(f"\n  Discovered {len(tools)} tools: {tool_names}")
 
+    # agent = create_agent(llm, tools)
     agent  = create_react_agent(llm, tools)
     output = {"server_script": SERVER_SCRIPT, "tools_discovered": tool_names, "queries": {}}
 
