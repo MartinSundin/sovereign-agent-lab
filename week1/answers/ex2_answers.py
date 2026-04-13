@@ -27,15 +27,41 @@ TASK_A_OUTDOOR_OK = True
 TASK_A_NOTES = "There were several bugs in research_agent.py that made it seem like the agent in exercise A made no tool calls, when in reality it did."   # optional — anything unexpected
 
 # ── Task B ─────────────────────────────────────────────────────────────────
+#
+# The scaffold ships with a working generate_event_flyer that has two paths:
+#
+#   - Live mode: if FLYER_IMAGE_MODEL is set in .env, the tool calls that
+#     model and returns a real image URL.
+#   - Placeholder mode: otherwise (the default) the tool returns a
+#     deterministic placehold.co URL with mode="placeholder".
+#
+# Both paths return success=True. Both count as "implemented" for grading.
+# This is not the original Task B — the original asked you to write a direct
+# FLUX image call, but Nebius removed FLUX on 2026-04-13. See CHANGELOG.md
+# §Changed for why we pivoted the task.
 
-# Has generate_event_flyer been implemented (not just the stub)?
+# Did your run of the flyer tool produce a success=True result?
+# (This will be True for both live and placeholder mode — both are valid.)
 TASK_B_IMPLEMENTED = True   # True or False
 
-# The image URL returned (or the error message if still a stub).
-TASK_B_IMAGE_URL_OR_ERROR = "ttps://pictures-storage.storage.eu-north1.nebius.cloud/text2img-6abf174a-4fea-4312-a4f7-b5016bfd95f3_00001_.webp"
+# Which path did your run take? "live" or "placeholder"
+# Look for the "mode" field in the TOOL_RESULT output of Task B.
+# If you didn't set FLYER_IMAGE_MODEL in .env, you will get "placeholder".
+TASK_B_MODE = "FILL_ME_IN"
+
+# The image URL returned by the tool. Copy exactly from your terminal output.
+# In placeholder mode this will be a placehold.co URL.
+# In live mode it will be a provider CDN URL.
+TASK_B_IMAGE_URL = "ttps://pictures-storage.storage.eu-north1.nebius.cloud/text2img-6abf174a-4fea-4312-a4f7-b5016bfd95f3_00001_.webp"
 
 # The prompt sent to the image model. Copy from terminal output.
 TASK_B_PROMPT_USED = "Professional event flyer for Edinburgh AI Meetup, tech professionals, modern venue at The Haymarket Vaults, Edinburgh. 160 guests tonight. Warm lighting, Scottish architecture background, clean modern typography."
+
+# Why did the agent's behaviour NOT change when Nebius removed FLUX?
+# One sentence. This is the point of the lesson.
+TASK_B_WHY_AGENT_SURVIVED = """
+FILL ME IN
+"""
 
 # ── Task C ─────────────────────────────────────────────────────────────────
 
@@ -90,7 +116,7 @@ graph TD;
         classDef last fill:#bfb6fc
 """
 
-# Compare the LangGraph graph to exercise3_rasa/data/rules.yml. Min 30 words.
+# Compare the LangGraph graph to exercise3_rasa/data/flows.yml. Min 30 words.
 TASK_D_COMPARISON = """
 The graph in exercise3_rasa/data/rules.yml is human readable and therefore also editable when some requirements change. The output from langchain is also readable, but much harder to read. One can consider a scenario where each graph is very large, in that case the interactive graph in the mermaid editor is perhaps easier to inspect but it is not searchable (as far as I can see). For searchable graphs, the text based RASA format is perhaps easier to navigate.
 """
