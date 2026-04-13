@@ -264,12 +264,12 @@ def _attempt_real_image_generation(prompt: str) -> str | None:
 
 
 @tool
-def generate_event_flyer(pub_name: str, guest_count: int, event_theme: str) -> str:
+def generate_event_flyer(venue_name: str, guest_count: int, event_theme: str) -> str:
     """
     Generate a promotional event flyer image for the confirmed Edinburgh venue.
     Call this AFTER a venue is confirmed, as the final output step.
     Returns a URL to the generated image.
-    pub_name: the confirmed pub name
+    venue_name: the confirmed pub name
     guest_count: confirmed number of attendees
     event_theme: short description, e.g. 'AI Meetup, professional, Scottish'
     """
@@ -280,9 +280,10 @@ def generate_event_flyer(pub_name: str, guest_count: int, event_theme: str) -> s
     )
 
     prompt = (
-        f"Professional event flyer for {event_theme} at {pub_name}, "
+        f"Professional event flyer for {event_theme} at {venue_name}, "
         f"Edinburgh. {guest_count} guests tonight. Warm lighting, "
         f"Scottish architecture background, clean modern typography."
+    )
     prompt = _build_flyer_prompt(venue_name, guest_count, event_theme)
 
     # Path 1: real image generation (if a provider is configured)

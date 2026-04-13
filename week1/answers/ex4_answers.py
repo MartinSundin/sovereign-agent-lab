@@ -80,12 +80,15 @@ MCP offers the flexibility to wrap functions into decorators and you can use 'na
 #     ambiguous task.
 
 WEEK_5_ARCHITECTURE = """
-- FILL ME IN
-- FILL ME IN
-- FILL ME IN
-- FILL ME IN
-- FILL ME IN
-- Will come back to this exercise in week 5, I think is the idea
+- The full autonomus agent follows a Reach pattern where a Planner first outlines the necessary steps and then Executors perform the individual tasks.
+- The Planner first outlines a sequence of steps necessary to complete a task. This requires a strong reasoning model like Qwen3 since some tasks might not be possible to complete, forcing the model to reason about how to change the plan. A typical scenario is when a booking is made, but needs to be confirmed via email.
+- The Executor is built to apply a tool to solve a single isolated task, e.g. researching if a venue fullfills all the criteria. For this a simpler model (e.g. Gemini Flash) that can handle tool calls can be used. A simpler model can be used to reduce spending.
+- The Executor should also have a fallback logic for 'simple' failures, e.g. as part of the prompt or context. In case the fallbacks fail, the task needs to be delegated back to the Planner.
+- The RASA CALM Agent has the added benefit of having access to deterministic logic. So in case a task is crucial and there is no room for hallucinations (e.g. the capacity of a venue is often approximate while serving a vegan option is crucial), the RASA agent is prefered. The Rasa agent also has easy access to speech tools for when phone calls are necessary.
+- Some of the executor tasks might be long running and can require a 'session memory'. It is then necessary to build a local RAG system that keeps the session in memory until it finishes. This should ideally be decided by the planner, but can be hard-coded in some cases.
+- At the end of a long running session, it needs to be decided what information should be added to the top-level memory. This task should be completed by the planner agent since it has access to the full plan and can therefore filter the session information.
+- For each step, the planner needs to decide if any new information should be added to the context for each executor task. However, this might create too much overhead. It can therefore be useful if the planner inserts tags (like <tbd from="task2" id="weather">) for unknown info at planning time and that these are later populated deterministically. Such tags can also be used to determine the sequence of execution for the tasks.
+- PyNanoClaw should also have some top-level failure/feedback mode that circles back to the user. E.g. 'there were no available vegan restaurants, is vegetarian a good option?'. This is to prevent the model from hallucinating. Similarly, tool calls should ideally be verified deterministically to prevent hallucinated tool calls.
 """
 
 # ── The guiding question ───────────────────────────────────────────────────
@@ -93,44 +96,8 @@ WEEK_5_ARCHITECTURE = """
 # Must reference specific things you observed in your runs. Min 60 words.
 
 GUIDING_QUESTION_ANSWER = """
-FILL ME IN
-"""
-
-
-foo = """
-=================================================================
-  Query 1 — Search + Detail Fetch
-=================================================================
-
-  [HUMAN]
-  Find Edinburgh venues for 160 guests with vegan options and give me the full address of the best match.
-
-  [AI]
-  {"type": "function", "name": "search_venues", "parameters": {"kwargs": {"min_capacity": 160, "requires_vegan": true}}}
-
-
-=================================================================
-  Query 2 — Impossible Constraint
-=================================================================
-
-  [HUMAN]
-  Find a venue for 300 people with vegan options.
-
-  [AI]
-  {"type": "function", "name": "search_venues", "parameters": {"kwargs": {"min_capacity": 300, "requires_vegan": true}}}
-
-
-─────────────────────────────────────────────────────────────────
-REQUIRED EXPERIMENT (before filling in ex4_answers.py):
-
-  1. Open sovereign_agent/tools/mcp_venue_server.py
-  2. Change The Albanach's status from 'available' to 'full'
-  3. Save and run this script again
-  4. Compare the output to what you just saw
-  5. Revert the change
-
-  Record what changed (and what didn't) in ex4_answers.py → EX4_EXPERIMENT_RESULT
-
-✅  Results saved to /mnt/c/Users/sundi/OneDrive/Dokument/Python Scripts/sovereign-agent-lab/week1/outputs/ex4_results.json
-    Complete the experiment above, then fill in week1/answers/ex4_answers.py
+This question does require more testing and research. I can state my assumptions, but they are untested.
+For the high-level planning I would use a reasoning model like Qwen3-Next-Thinking.
+For the low-level execution tasks I would use a deterministic algorithm, were possible, and a simpler non-reasoning model otherwise to save tokens and time.
+Swapping the models seems incorrect since building the plan requires more 'thinking', a simple model would output something that can contain flaws.Similarly, using a reasoning model for a task where the goal is well defined means that the model will spend time reasoning if the step is correct although this has already been determined by the planner.
 """
